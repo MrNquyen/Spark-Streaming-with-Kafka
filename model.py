@@ -18,6 +18,7 @@ from torch.optim import Adam
 from transformers.optimization import get_linear_schedule_with_warmup
 from consumer import DataLoaderStreamKafka
 
+from sklearn.metrics import accuracy_score, precision_score, recall_score, f1_score
 
 class SentimentBertModel:
     def __init__(self, config):
@@ -46,22 +47,19 @@ class SentimentBertModel:
                 labels = batch["labels"]
                 label_ids = batch["label_ids"]
                 
-                # Encode
+                #---Encode
                 batch_info = self.encode_batch(sentences)
                 batch_info["labels"] = torch.tensor(label_ids)
-                # ic(batch_info)
-                # ic(batch_info.keys())
-                # ic([type(v) for v in batch_info.values()])
                 batch_info = {k: v.to(self.device) for k, v in batch_info.items()}
                 
-                # Forward pass
+                #---Forward pass
                 outputs = self.model(**batch_info)
                 loss = outputs.loss
                 
-                # Backward pass
+                #---Backward pass
                 loss.backward()
                 
-                # Update parameters
+                #---Update parameters
                 optimizer.step()
                 lr_scheduler.step()
                 optimizer.zero_grad()
@@ -88,16 +86,29 @@ class SentimentBertModel:
             batch_info["labels"] = torch.tensor(label_ids)
             batch_info = {k: v.to(self.device) for k, v in batch_info.items()}
             
-            # Forward pass
+            #---Forward pass
             outputs = self.model(**batch_info)
             probs = F.softmax(outputs.logits, dim=-1)
             probs = probs.detach().cpu().numpy()
             predictions = np.argmax(probs, axis=-1) 
 
-            # Append
+            #---Append
             all_eval['gt'].append(label_ids)
             all_eval['pred'].append(predictions)
         all_eval = {k: np.array(v).flatten() for k, v in all_eval.items()}
+        
+        accuracy = accuracy_score(all_eval['gt'], all_eval['pred'])
+        precision = precision_score(all_eval['gt'], all_eval['pred'])
+        recall = recall_score(all_eval['gt'], all_eval['pred'])
+        f1 = f1_score(all_eval['gt'], all_eval['pred'])
+
+        #---Print results
+        print(f"Accuracy: {accuracy:.2f}")
+        print(f"Precision: {precision:.2f}")
+        print(f"Recall: {recall:.2f}")
+        print(f"F1 Score: {f1:.2f}")
+        
+        #---Save result
         results_df = pd.DataFrame(all_eval)
         results_df.to_csv(os.path.join(save_dir, "results_test.csv"))
 
@@ -109,7 +120,6 @@ class SentimentBertModel:
             truncation=True,
             add_special_tokens= self.config['training']['tokenizer']['add_special_tokens'],
             max_length= self.config['training']['tokenizer']['max_length'],
-            # pad_to_max_length= self.config['training']['tokenizer']['pad_to_max_length'], 
             return_tensors=self.config['training']['tokenizer']['return_tensors']
         )
         return encode_info

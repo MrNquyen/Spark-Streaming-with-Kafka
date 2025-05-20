@@ -6,13 +6,13 @@ from model import SentimentBertModel
 
 #------------------------GLOBAL--------------------------------------------------------------
 kafka_server = 'localhost:9092'
-topic_name = 'VSFC_Sentiment_{split}'
+topic_name = 'VSFC_Sentiment_{mode}'
 
 #------------------------FUNCTION--------------------------------------------------------------
 def getargs():
     parser = argparse.ArgumentParser(description="Streams a file to a Spark Streaming Context")
     parser.add_argument("--config", "-c", help="Path to config file", required=True, type=str)
-    parser.add_argument("--split", "-spl", help="Which split want to use", required=True, type=str, default="train", choices=["train", "test"])
+    parser.add_argument("--mode", "-spl", help="Which mode want to use", required=True, type=str, default="train", choices=["train", "test"])
     parser.add_argument("--save_dir", help="Your save directory", type=str, default="save")
     return parser.parse_args()
 
@@ -21,7 +21,7 @@ if __name__=="__main__":
     #--- Load Params
     args = getargs() 
     config = load_yml(args.config)
-    topic_name = topic_name.format(split=args.split)
+    topic_name = topic_name.format(mode=args.mode)
 
     #--- Define Loader
     print("Load Dataloader")
@@ -30,19 +30,14 @@ if __name__=="__main__":
         topic_name=topic_name
     )
 
-    #--- Define Model
-
-    
-        
-
     #--- Select mode
-    if args.split=="train":
+    if args.mode=="train":
         #---Training
         print("Load Model for Training")
         sentiment_model = SentimentBertModel(config=config)
         sentiment_model.train(stream_loader)
     
-    elif args.split=="test":
+    elif args.mode=="test":
         #---Evaluating
         print("Load Model for Evaluate")
         config["model"]["model_name"] = f"{args.save_dir}/sentiment_bert"

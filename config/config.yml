@@ -1,0 +1,24 @@
+data:
+  train: data\train.json
+  val: data\valid.json
+  test: data\test.json
+save: save
+training:
+  device: cpu
+  epochs: 1
+  batch_size: 4
+  batches_per_epoch: 250 
+  num_warmup_steps: 50
+  lr: 0.001
+  tokenizer:
+    add_special_tokens: True
+    max_length: 32
+    pad_to_max_length: True 
+    return_tensors: pt
+model:
+  # model_embedding: wonrax/phobert-base-vietnamese-sentiment
+  model_name: wonrax/phobert-base-vietnamese-sentiment
+  hidden_size: 768
+
+  
+

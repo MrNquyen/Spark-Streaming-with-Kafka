@@ -1,0 +1,8 @@
+# BIN
+F:\kafka_2.12-3.6.0\bin
+
+# Start server 
+bin\windows\zookeeper-server-start.bat config\zookeeper.properties
+
+# Start Cluster
+bin\windows\kafka-server-start.bat config\server.properties
